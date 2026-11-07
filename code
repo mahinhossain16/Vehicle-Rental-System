@@ -1,0 +1,486 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_VEHICLES 50
+#define MAX_RECORDS 100
+#define ADMIN_PASSWORD "MahinMohimaOishi"
+
+int vehicleCount = 0;
+int vehicleId[MAX_VEHICLES];
+char vehicleName[MAX_VEHICLES][50];
+char vehicleCategory[MAX_VEHICLES][30];
+float rentalRate[MAX_VEHICLES];
+int available[MAX_VEHICLES];
+
+int recordCount = 0;
+int recordVehicleId[MAX_RECORDS];
+int recordDays[MAX_RECORDS];
+float recordTotalCost[MAX_RECORDS];
+
+void removeNewLine(char *str) {
+    size_t len = strlen(str);
+    if (len > 0 && str[len - 1] == '\n') {
+        str[len - 1] = '\0';
+    }
+}
+
+void toLowerCase(char *str, char *output) {
+    int i = 0;
+    while (str[i] != '\0') {
+        output[i] = tolower((unsigned char)str[i]);
+        i++;
+    }
+    output[i] = '\0';
+}
+
+void adminMenu();
+void customerMenu();
+void addVehicle();
+void viewAllVehicles();
+void searchVehicleByName();
+void updateVehicle();
+void removeVehicle();
+void viewRentalRecords();
+void viewAvailableVehicles();
+void rentVehicle();
+void returnVehicle();
+int findVehicleByIdOrName(char *inputStr);
+
+int main() {
+    int choice;
+
+    while (1) {
+        printf("\n=========================================\n");
+        printf("      VEHICLE RENTAL SYSTEM MAIN MENU    \n");
+        printf("=========================================\n");
+        printf("1. Admin Panel\n");
+        printf("2. Customer Panel\n");
+        printf("3. Exit System\n");
+        printf("Enter your choice (1-3): ");
+        scanf("%d", &choice);
+        getchar();
+
+        switch (choice) {
+            case 1:
+                adminMenu();
+                break;
+            case 2:
+                customerMenu();
+                break;
+            case 3:
+                printf("\nThank you for using Vehicle Rental System. Goodbye!\n");
+                return 0;
+            default:
+                printf("\nInvalid choice! Please select 1, 2, or 3.\n");
+        }
+    }
+
+    return 0;
+}
+
+void adminMenu() {
+    char pass[50];
+    printf("\nEnter Admin Password: ");
+    fgets(pass, sizeof(pass), stdin);
+    removeNewLine(pass);
+
+    if (strcmp(pass, ADMIN_PASSWORD) != 0) {
+        printf("\nIncorrect Password! Access Denied.\n");
+        return;
+    }
+
+    int choice;
+
+    while (1) {
+        printf("\n------------- ADMIN PANEL -------------\n");
+        printf("1. Add New Vehicle\n");
+        printf("2. View All Vehicles\n");
+        printf("3. Search Vehicle by Name\n");
+        printf("4. Update Vehicle Information\n");
+        printf("5. Remove Vehicle\n");
+        printf("6. View Rental Records\n");
+        printf("7. Process Vehicle Return\n");
+        printf("8. Return to Main Menu\n");
+        printf("Enter choice (1-8): ");
+        scanf("%d", &choice);
+        getchar();
+
+        switch (choice) {
+            case 1:
+                addVehicle();
+                break;
+            case 2:
+                viewAllVehicles();
+                break;
+            case 3:
+                searchVehicleByName();
+                break;
+            case 4:
+                updateVehicle();
+                break;
+            case 5:
+                removeVehicle();
+                break;
+            case 6:
+                viewRentalRecords();
+                break;
+            case 7:
+                returnVehicle();
+                break;
+            case 8:
+                return;
+            default:
+                printf("\nInvalid choice! Please select between 1 and 8.\n");
+        }
+    }
+}
+
+void customerMenu() {
+    int choice;
+
+    while (1) {
+        printf("\n----------- CUSTOMER PANEL -----------\n");
+        printf("1. View Available Vehicles\n");
+        printf("2. Search Vehicle by Name\n");
+        printf("3. Rent a Vehicle (Search by ID or Name)\n");
+        printf("4. Return a Rented Vehicle\n");
+        printf("5. Return to Main Menu\n");
+        printf("Enter choice (1-5): ");
+        scanf("%d", &choice);
+        getchar();
+
+        switch (choice) {
+            case 1:
+                viewAvailableVehicles();
+                break;
+            case 2:
+                searchVehicleByName();
+                break;
+            case 3:
+                rentVehicle();
+                break;
+            case 4:
+                returnVehicle();
+                break;
+            case 5:
+                return;
+            default:
+                printf("\nInvalid choice! Please select between 1 and 5.\n");
+        }
+    }
+}
+
+int findVehicleByIdOrName(char *inputStr) {
+    int i;
+    char lowerInput[50], lowerName[50];
+
+    int inputId = 0;
+    if (sscanf(inputStr, "%d", &inputId) == 1) {
+        for (i = 0; i < vehicleCount; i++) {
+            if (vehicleId[i] == inputId) {
+                return i;
+            }
+        }
+    }
+
+    toLowerCase(inputStr, lowerInput);
+    for (i = 0; i < vehicleCount; i++) {
+        toLowerCase(vehicleName[i], lowerName);
+        if (strcmp(lowerName, lowerInput) == 0 || strstr(lowerName, lowerInput) != NULL) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+void addVehicle() {
+    if (vehicleCount >= MAX_VEHICLES) {
+        printf("\nSystem full! Cannot add more vehicles.\n");
+        return;
+    }
+
+    int newId, i;
+    printf("\nEnter Vehicle ID (Number): ");
+    scanf("%d", &newId);
+    getchar();
+
+    for (i = 0; i < vehicleCount; i++) {
+        if (vehicleId[i] == newId) {
+            printf("Error: Vehicle ID %d already exists!\n", newId);
+            return;
+        }
+    }
+
+    vehicleId[vehicleCount] = newId;
+
+    printf("Enter Vehicle Name: ");
+    fgets(vehicleName[vehicleCount], sizeof(vehicleName[vehicleCount]), stdin);
+    removeNewLine(vehicleName[vehicleCount]);
+
+    printf("Enter Vehicle Category: ");
+    fgets(vehicleCategory[vehicleCount], sizeof(vehicleCategory[vehicleCount]), stdin);
+    removeNewLine(vehicleCategory[vehicleCount]);
+
+    printf("Enter Daily Rental Rate (Tk): ");
+    scanf("%f", &rentalRate[vehicleCount]);
+    getchar();
+
+    available[vehicleCount] = 1;
+
+    vehicleCount++;
+    printf("\nVehicle Added Successfully!\n");
+}
+
+void viewAllVehicles() {
+    int i;
+
+    if (vehicleCount == 0) {
+        printf("\nNo vehicles added to the system yet!\n");
+        return;
+    }
+
+    printf("\n------------------------------------------------------------------------\n");
+    printf("%-10s %-25s %-15s %-15s %-10s\n", "ID", "Name", "Category", "Rate/Day (Tk)", "Status");
+    printf("------------------------------------------------------------------------\n");
+
+    for (i = 0; i < vehicleCount; i++) {
+        printf("%-10d %-25s %-15s %-15.2f %-10s\n",
+               vehicleId[i],
+               vehicleName[i],
+               vehicleCategory[i],
+               rentalRate[i],
+               (available[i] == 1) ? "Available" : "Rented");
+    }
+    printf("------------------------------------------------------------------------\n");
+}
+
+void searchVehicleByName() {
+    if (vehicleCount == 0) {
+        printf("\nNo vehicles added to the system yet!\n");
+        return;
+    }
+
+    char searchName[50], lowerSearch[50], lowerVehicle[50];
+    int i, found = 0;
+
+    printf("\nEnter Vehicle Name to search: ");
+    fgets(searchName, sizeof(searchName), stdin);
+    removeNewLine(searchName);
+    toLowerCase(searchName, lowerSearch);
+
+    printf("\n------------------------------------------------------------------------\n");
+    printf("%-10s %-25s %-15s %-15s %-10s\n", "ID", "Name", "Category", "Rate/Day (Tk)", "Status");
+    printf("------------------------------------------------------------------------\n");
+
+    for (i = 0; i < vehicleCount; i++) {
+        toLowerCase(vehicleName[i], lowerVehicle);
+        if (strstr(lowerVehicle, lowerSearch) != NULL) {
+            printf("%-10d %-25s %-15s %-15.2f %-10s\n",
+                   vehicleId[i],
+                   vehicleName[i],
+                   vehicleCategory[i],
+                   rentalRate[i],
+                   (available[i] == 1) ? "Available" : "Rented");
+            found = 1;
+        }
+    }
+    printf("------------------------------------------------------------------------\n");
+
+    if (found == 0) {
+        printf("\nNo vehicle found matching: '%s'\n", searchName);
+    }
+}
+
+void updateVehicle() {
+    if (vehicleCount == 0) {
+        printf("\nNo vehicles to update!\n");
+        return;
+    }
+
+    char inputStr[50];
+    printf("\nEnter Vehicle ID or Name to update: ");
+    fgets(inputStr, sizeof(inputStr), stdin);
+    removeNewLine(inputStr);
+
+    int index = findVehicleByIdOrName(inputStr);
+
+    if (index != -1) {
+        printf("\nUpdating vehicle: %s (ID: %d)\n", vehicleName[index], vehicleId[index]);
+
+        printf("Enter New Category: ");
+        fgets(vehicleCategory[index], sizeof(vehicleCategory[index]), stdin);
+        removeNewLine(vehicleCategory[index]);
+
+        printf("Enter New Daily Rental Rate (Tk): ");
+        scanf("%f", &rentalRate[index]);
+        getchar();
+
+        printf("\nVehicle information updated successfully!\n");
+    } else {
+        printf("\nVehicle not found!\n");
+    }
+}
+
+void removeVehicle() {
+    if (vehicleCount == 0) {
+        printf("\nNo vehicles available to remove!\n");
+        return;
+    }
+
+    char inputStr[50];
+    int j;
+
+    printf("\nEnter Vehicle ID or Name to remove: ");
+    fgets(inputStr, sizeof(inputStr), stdin);
+    removeNewLine(inputStr);
+
+    int index = findVehicleByIdOrName(inputStr);
+
+    if (index != -1) {
+        for (j = index; j < vehicleCount - 1; j++) {
+            vehicleId[j] = vehicleId[j + 1];
+            strcpy(vehicleName[j], vehicleName[j + 1]);
+            strcpy(vehicleCategory[j], vehicleCategory[j + 1]);
+            rentalRate[j] = rentalRate[j + 1];
+            available[j] = available[j + 1];
+        }
+
+        vehicleCount--;
+        printf("\nVehicle removed successfully!\n");
+    } else {
+        printf("\nVehicle not found!\n");
+    }
+}
+
+void viewRentalRecords() {
+    int i;
+
+    if (recordCount == 0) {
+        printf("\nNo rental history recorded yet!\n");
+        return;
+    }
+
+    printf("\n--------------------------------------------------\n");
+    printf("%-10s %-15s %-15s %-10s\n", "Record #", "Vehicle ID", "Days Rented", "Total (Tk)");
+    printf("--------------------------------------------------\n");
+
+    for (i = 0; i < recordCount; i++) {
+        printf("%-10d %-15d %-15d %-10.2f\n",
+               i + 1,
+               recordVehicleId[i],
+               recordDays[i],
+               recordTotalCost[i]);
+    }
+    printf("--------------------------------------------------\n");
+}
+
+void viewAvailableVehicles() {
+    int i, foundAvailable = 0;
+
+    if (vehicleCount == 0) {
+        printf("\nNo vehicles added in the system yet!\n");
+        return;
+    }
+
+    printf("\n------------------------------------------------------------------------\n");
+    printf("%-10s %-25s %-15s %-15s\n", "ID", "Name", "Category", "Rate/Day (Tk)");
+    printf("------------------------------------------------------------------------\n");
+
+    for (i = 0; i < vehicleCount; i++) {
+        if (available[i] == 1) {
+            printf("%-10d %-25s %-15s %-15.2f\n",
+                   vehicleId[i],
+                   vehicleName[i],
+                   vehicleCategory[i],
+                   rentalRate[i]);
+            foundAvailable = 1;
+        }
+    }
+    printf("------------------------------------------------------------------------\n");
+
+    if (foundAvailable == 0) {
+        printf("\nSorry, no vehicles are currently available for rent.\n");
+    }
+}
+
+void rentVehicle() {
+    if (vehicleCount == 0) {
+        printf("\nNo vehicles available in system!\n");
+        return;
+    }
+
+    char inputStr[50];
+    int days;
+    float total;
+
+    printf("\nEnter Vehicle ID or Name you want to rent: ");
+    fgets(inputStr, sizeof(inputStr), stdin);
+    removeNewLine(inputStr);
+
+    int index = findVehicleByIdOrName(inputStr);
+
+    if (index != -1) {
+        if (available[index] == 0) {
+            printf("\nSorry, this vehicle is already rented out!\n");
+            return;
+        }
+
+        printf("Enter number of rental days: ");
+        scanf("%d", &days);
+        getchar();
+
+        if (days <= 0) {
+            printf("Invalid number of days!\n");
+            return;
+        }
+
+        total = rentalRate[index] * days;
+
+        printf("\n--- RENTAL RECEIPT SUMMARY ---\n");
+        printf("Vehicle ID   : %d\n", vehicleId[index]);
+        printf("Vehicle Name : %s\n", vehicleName[index]);
+        printf("Daily Rate   : Tk %.2f\n", rentalRate[index]);
+        printf("Days Rented  : %d\n", days);
+        printf("Total Cost   : Tk %.2f\n", total);
+        printf("------------------------------\n");
+
+        available[index] = 0;
+
+        recordVehicleId[recordCount] = vehicleId[index];
+        recordDays[recordCount] = days;
+        recordTotalCost[recordCount] = total;
+        recordCount++;
+
+        printf("\nBooking Confirmed! Enjoy your ride.\n");
+    } else {
+        printf("\nVehicle not found!\n");
+    }
+}
+
+void returnVehicle() {
+    if (vehicleCount == 0) {
+        printf("\nNo vehicles in the system!\n");
+        return;
+    }
+
+    char inputStr[50];
+    printf("\nEnter Vehicle ID or Name to return: ");
+    fgets(inputStr, sizeof(inputStr), stdin);
+    removeNewLine(inputStr);
+
+    int index = findVehicleByIdOrName(inputStr);
+
+    if (index != -1) {
+        if (available[index] == 1) {
+            printf("\nThis vehicle is already marked as available!\n");
+            return;
+        }
+
+        available[index] = 1;
+        printf("\nVehicle '%s' (ID: %d) returned successfully!\n", vehicleName[index], vehicleId[index]);
+    } else {
+        printf("\nVehicle not found!\n");
+    }
+}
